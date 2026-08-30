@@ -1,3 +1,5 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
@@ -47,5 +49,23 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "pcmonitor.MainKt"
+
+        nativeDistributions {
+            // createDistributable é o caminho principal: gera um diretório com
+            // a aplicação e uma JVM enxuta via jlink, sem depender de
+            // ferramenta de empacotamento do sistema. O .deb fica disponível
+            // para quem tiver dpkg, mas não é requisito para rodar.
+            targetFormats(TargetFormat.Deb)
+
+            packageName = "pc-monitor"
+            packageVersion = "1.0.0"
+            description = "Monitor de recursos do computador em tempo real"
+            vendor = "PC Monitor"
+
+            // O agente responde em JSON sobre HTTP e WebSocket; sem estes
+            // módulos o jlink enxuga a JVM até quebrar a rede em tempo de
+            // execução, e o erro só aparece no aplicativo empacotado.
+            modules("java.net.http", "jdk.crypto.ec", "java.management")
+        }
     }
 }

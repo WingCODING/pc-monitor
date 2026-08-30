@@ -22,3 +22,6 @@ agent/*.out
 # OS
 .DS_Store
 Thumbs.db
+
+# Artefatos de build
+dist/
