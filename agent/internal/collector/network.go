@@ -11,10 +11,6 @@ import (
 	"pc-monitor-agent/internal/model"
 )
 
-// loopbackInterface é excluída das métricas: seu tráfego é interno à máquina e
-// distorceria a leitura de uso de rede.
-const loopbackInterface = "lo"
-
 // counterSnapshot guarda os contadores de uma interface e o instante da
 // leitura. O instante é essencial: a velocidade precisa do intervalo real
 // decorrido, não do intervalo nominal de coleta.
@@ -48,6 +44,8 @@ func (c *networkCollector) Collect(ctx context.Context) ([]model.NetworkMetrics,
 		return nil, fmt.Errorf("contadores de rede: %w", err)
 	}
 
+	loopbacks := loopbackInterfaces(ctx)
+
 	readAt := c.now()
 
 	c.mu.Lock()
@@ -56,7 +54,7 @@ func (c *networkCollector) Collect(ctx context.Context) ([]model.NetworkMetrics,
 	metrics := make([]model.NetworkMetrics, 0, len(counters))
 
 	for _, counter := range counters {
-		if counter.Name == loopbackInterface {
+		if loopbacks[counter.Name] {
 			continue
 		}
 
@@ -79,6 +77,29 @@ func (c *networkCollector) Collect(ctx context.Context) ([]model.NetworkMetrics,
 	}
 
 	return metrics, nil
+}
+
+// loopbackInterfaces identifica as interfaces pelo sinalizador fornecido pelo
+// sistema operacional. Comparar apenas com "lo" funcionava no Linux, mas
+// incluía a interface de loopback do Windows nas métricas do dashboard.
+func loopbackInterfaces(ctx context.Context) map[string]bool {
+	result := map[string]bool{"lo": true}
+
+	interfaces, err := net.InterfacesWithContext(ctx)
+	if err != nil {
+		return result
+	}
+
+	for _, iface := range interfaces {
+		for _, flag := range iface.Flags {
+			if flag == "loopback" {
+				result[iface.Name] = true
+				break
+			}
+		}
+	}
+
+	return result
 }
 
 // speeds calcula download e upload em bytes por segundo entre duas leituras.

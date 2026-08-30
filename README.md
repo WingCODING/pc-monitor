@@ -55,7 +55,7 @@ abertas não viram dez varreduras de `/proc` por segundo.
 
 ## Requisitos
 
-Para **rodar** o que já está empacotado: nada além do Linux.
+Para **rodar** o que já está empacotado: nada além do sistema operacional.
 
 Para **compilar**:
 
@@ -63,7 +63,7 @@ Para **compilar**:
 |---|---|
 | Go | 1.24+ |
 | JDK | 21 |
-| Linux | o agente lê `/proc` (gopsutil) |
+| Sistema | Linux ou Windows 10/11 x64 |
 
 ---
 
@@ -75,6 +75,16 @@ Para **compilar**:
 scripts/build.sh    # compila agente e desktop em dist/
 scripts/start.sh    # sobe os dois; fechar a janela encerra o agente
 ```
+
+### Windows
+
+Baixe o `.exe` ou `.msi` na página **Releases** do GitHub. O instalador inclui
+o frontend, uma JVM reduzida e o agente: não é preciso instalar Go ou Java.
+Ao abrir o PC Monitor, o agente inicia em uma porta local livre e encerra junto
+com a janela.
+
+Os instaladores são gerados pelo workflow `Windows` em cada tag `v*`. Builds da
+branch `master` também ficam disponíveis como artefatos da execução do workflow.
 
 ### Durante o desenvolvimento
 

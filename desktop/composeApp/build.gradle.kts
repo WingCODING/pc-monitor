@@ -55,12 +55,20 @@ compose.desktop {
             // a aplicação e uma JVM enxuta via jlink, sem depender de
             // ferramenta de empacotamento do sistema. O .deb fica disponível
             // para quem tiver dpkg, mas não é requisito para rodar.
-            targetFormats(TargetFormat.Deb)
+            targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Exe)
 
             packageName = "pc-monitor"
             packageVersion = "1.0.0"
             description = "Monitor de recursos do computador em tempo real"
             vendor = "PC Monitor"
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("packaging/resources"))
+
+            windows {
+                menuGroup = "PC Monitor"
+                dirChooser = true
+                perUserInstall = true
+                upgradeUuid = "9e66a779-520e-4c9c-b739-7786c9b74726"
+            }
 
             // O agente responde em JSON sobre HTTP e WebSocket; sem estes
             // módulos o jlink enxuga a JVM até quebrar a rede em tempo de

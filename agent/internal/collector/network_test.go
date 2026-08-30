@@ -121,9 +121,10 @@ func TestNetworkCollectorMaquinaReal(t *testing.T) {
 	if len(interfaces) == 0 {
 		t.Fatal("nenhuma interface detectada")
 	}
+	loopbacks := loopbackInterfaces(ctx)
 
 	for _, atual := range interfaces {
-		if atual.InterfaceName == loopbackInterface {
+		if loopbacks[atual.InterfaceName] {
 			t.Errorf("loopback %q não deveria aparecer nas métricas", atual.InterfaceName)
 		}
 
