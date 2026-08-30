@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"pc-monitor-agent/internal/api"
+	"pc-monitor-agent/internal/collector"
+	"pc-monitor-agent/internal/service"
 )
 
 const (
@@ -40,8 +42,12 @@ func run() error {
 		return fmt.Errorf("não foi possível escutar em %s: %w", defaultAddr, err)
 	}
 
+	deps := api.Deps{
+		CPU: service.NewCPUService(collector.NewCPUCollector()),
+	}
+
 	server := &http.Server{
-		Handler:           api.NewRouter(),
+		Handler:           api.NewRouter(deps),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 

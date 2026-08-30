@@ -11,7 +11,7 @@ func TestHandleHealth(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	rec := httptest.NewRecorder()
 
-	NewRouter().ServeHTTP(rec, req)
+	NewRouter(Deps{}).ServeHTTP(rec, req)
 
 	res := rec.Result()
 	defer res.Body.Close()
@@ -38,7 +38,7 @@ func TestHandleHealthRejeitaMetodoInvalido(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/health", nil)
 	rec := httptest.NewRecorder()
 
-	NewRouter().ServeHTTP(rec, req)
+	NewRouter(Deps{}).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Errorf("status = %d, esperado %d", rec.Code, http.StatusMethodNotAllowed)
