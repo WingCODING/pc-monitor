@@ -10,16 +10,17 @@ import (
 
 // MetricsService monta o snapshot agregado consumido pelo dashboard.
 type MetricsService struct {
-	cpu    *CPUService
-	memory *MemoryService
-	system *SystemService
-	disk   *DiskService
+	cpu     *CPUService
+	memory  *MemoryService
+	system  *SystemService
+	disk    *DiskService
+	network *NetworkService
 }
 
 // NewMetricsService compõe os services já existentes em vez de falar
 // diretamente com os collectors, reaproveitando a classificação de erros.
-func NewMetricsService(cpu *CPUService, memory *MemoryService, system *SystemService, disk *DiskService) *MetricsService {
-	return &MetricsService{cpu: cpu, memory: memory, system: system, disk: disk}
+func NewMetricsService(cpu *CPUService, memory *MemoryService, system *SystemService, disk *DiskService, network *NetworkService) *MetricsService {
+	return &MetricsService{cpu: cpu, memory: memory, system: system, disk: disk, network: network}
 }
 
 // Snapshot devolve o estado atual da máquina.
@@ -58,6 +59,14 @@ func (s *MetricsService) Snapshot(ctx context.Context) model.DashboardMetrics {
 			slog.Warn("disco indisponível no snapshot", "error", err)
 		} else {
 			snapshot.Disk = &summary
+		}
+	}
+
+	if s.network != nil {
+		if summary, err := s.network.Summary(ctx); err != nil {
+			slog.Warn("rede indisponível no snapshot", "error", err)
+		} else {
+			snapshot.Network = &summary
 		}
 	}
 

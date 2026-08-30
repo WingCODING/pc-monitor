@@ -12,7 +12,9 @@ import (
 func metricsServiceComDubles(cpu cpuCollectorFalso, memoria memoryCollectorFalso, sistema systemCollectorFalso) *MetricsService {
 	disco := diskCollectorFalso{discos: []model.DiskMetrics{{Name: "/dev/dm-0", MountPoint: "/", Total: 1000, Used: 400, UsagePercent: 40}}}
 
-	return NewMetricsService(NewCPUService(cpu), NewMemoryService(memoria), NewSystemService(sistema), NewDiskService(disco))
+	rede := networkCollectorFalso{interfaces: []model.NetworkMetrics{{InterfaceName: "enp13s0", DownloadBytesPerSecond: 5242880, UploadBytesPerSecond: 1048576}}}
+
+	return NewMetricsService(NewCPUService(cpu), NewMemoryService(memoria), NewSystemService(sistema), NewDiskService(disco), NewNetworkService(rede))
 }
 
 // sistemaOK devolve um dublê de sistema saudável, para os testes que não estão
