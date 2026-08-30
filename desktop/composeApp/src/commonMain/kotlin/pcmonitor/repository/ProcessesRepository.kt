@@ -2,6 +2,7 @@ package pcmonitor.repository
 
 import pcmonitor.model.ProcessMetrics
 import pcmonitor.network.AgentClient
+import pcmonitor.viewmodel.ProcessSort
 
 /**
  * Lista de processos.
@@ -11,8 +12,10 @@ import pcmonitor.network.AgentClient
  * custa uma volta inteira em /proc no agente.
  */
 class ProcessesRepository(private val client: AgentClient) {
-    suspend fun getProcesses(limit: Int = DEFAULT_LIMIT): AgentResult<List<ProcessMetrics>> =
-        callAgent { client.processes(limit = limit) }
+    suspend fun getProcesses(
+        sort: ProcessSort = ProcessSort.Cpu,
+        limit: Int = DEFAULT_LIMIT,
+    ): AgentResult<List<ProcessMetrics>> = callAgent { client.processes(sort = sort.apiValue, limit = limit) }
 
     companion object {
         const val DEFAULT_LIMIT = 50

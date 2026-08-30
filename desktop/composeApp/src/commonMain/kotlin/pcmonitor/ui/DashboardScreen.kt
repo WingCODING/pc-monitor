@@ -29,7 +29,8 @@ import pcmonitor.ui.components.ConnectionStatus
 import pcmonitor.ui.components.MetricCard
 import pcmonitor.ui.components.MetricChart
 import pcmonitor.ui.components.NetworkCard
-import pcmonitor.ui.components.ProcessTable
+import pcmonitor.ui.components.ProcessSection
+import pcmonitor.ui.components.StatusBanner
 import pcmonitor.ui.format.formatBytes
 import pcmonitor.ui.format.formatBytesPerSecond
 import pcmonitor.ui.format.formatPercent
@@ -37,7 +38,9 @@ import pcmonitor.ui.format.formatUptime
 import pcmonitor.ui.theme.StatusColors
 import pcmonitor.viewmodel.ConnectionState
 import pcmonitor.viewmodel.MetricsHistory
+import pcmonitor.viewmodel.ProcessSort
 import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Tela única do dashboard: cabeçalho, área de métricas e área de processos.
@@ -52,7 +55,10 @@ fun DashboardScreen(
     processes: List<ProcessMetrics>,
     system: SystemMetrics?,
     connection: ConnectionState,
+    processSort: ProcessSort,
+    onProcessSortChange: (ProcessSort) -> Unit,
     history: MetricsHistory = MetricsHistory(),
+    message: String? = null,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(
@@ -68,14 +74,16 @@ fun DashboardScreen(
         val conteudo: @Composable ColumnScope.() -> Unit = {
             Header(system, metrics?.uptimeSeconds, connection)
 
+            StatusBanner(connection, message)
+
             MetricsArea(metrics, Modifier.fillMaxWidth())
 
             ChartsArea(history, Modifier.fillMaxWidth())
 
-            SectionTitle("Processos")
-
-            ProcessTable(
+            ProcessSection(
                 processes = processes,
+                sort = processSort,
+                onSortChange = onProcessSortChange,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(if (compact) Modifier.height(COMPACT_TABLE_HEIGHT) else Modifier.weight(1f)),
@@ -140,15 +148,6 @@ private fun machineLine(system: SystemMetrics?, uptimeSeconds: Long?): String {
     }
 
     return if (parts.isEmpty()) "aguardando o agente" else parts.joinToString("  ·  ")
-}
-
-@Composable
-private fun SectionTitle(text: String) {
-    Text(
-        text = text.uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 }
 
 /**
@@ -262,7 +261,10 @@ private fun FluidGrid(
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier) {
-        val columns = max(1, (maxWidth / minCardWidth).toInt())
+        // Nunca mais colunas do que cartões: numa tela larga, dividir a
+        // largura por uma coluna vazia deixaria os cartões espremidos com
+        // metade da tela em branco ao lado.
+        val columns = min(cards.size, max(1, (maxWidth / minCardWidth).toInt()))
 
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             cards.chunked(columns).forEach { row ->

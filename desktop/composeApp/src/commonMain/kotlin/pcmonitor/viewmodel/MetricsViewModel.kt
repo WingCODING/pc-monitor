@@ -8,9 +8,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import pcmonitor.repository.AgentResult
 import pcmonitor.repository.FailureReason
 import pcmonitor.repository.MetricsRepository
@@ -38,6 +40,13 @@ class MetricsViewModel(
     private val mutableState = MutableStateFlow(DashboardUiState())
     val state: StateFlow<DashboardUiState> = mutableState.asStateFlow()
 
+    /**
+     * Critério pedido ao agente. Separado do estado da UI porque o laço de
+     * processos precisa esperar por mudanças nele, e não por qualquer
+     * atualização de métrica.
+     */
+    private val processSort = MutableStateFlow(ProcessSort.Cpu)
+
     private val jobs = mutableListOf<Job>()
 
     /** Começa a acompanhar o agente. Chamar duas vezes não duplica os loops. */
@@ -52,6 +61,12 @@ class MetricsViewModel(
         jobs += scope.launch(Dispatchers.Default) { observeMetrics() }
         jobs += scope.launch(Dispatchers.Default) { pollProcesses() }
         jobs += scope.launch(Dispatchers.Default) { loadSystem() }
+    }
+
+    /** Troca o critério de ordenação e refaz o pedido sem esperar o intervalo. */
+    fun setProcessSort(sort: ProcessSort) {
+        processSort.value = sort
+        mutableState.update { it.copy(processSort = sort) }
     }
 
     fun stop() {
@@ -100,13 +115,18 @@ class MetricsViewModel(
      */
     private suspend fun pollProcesses() {
         while (currentCoroutineContext().isActive) {
-            val result = processesRepository.getProcesses()
+            val sort = processSort.value
+
+            val result = processesRepository.getProcesses(sort)
 
             if (result is AgentResult.Success) {
                 mutableState.update { it.copy(processes = result.value) }
             }
 
-            delay(processesInterval)
+            // Espera o intervalo, mas acorda na hora se o usuário trocar o
+            // critério: esperar dois segundos depois de um clique faria a
+            // interface parecer travada.
+            withTimeoutOrNull(processesInterval) { processSort.first { it != sort } }
         }
     }
 

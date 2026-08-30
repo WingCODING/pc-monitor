@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -82,10 +83,10 @@ private fun HeaderRow() {
             .padding(horizontal = 16.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        HeaderCell("PID", Modifier.weight(PID_WEIGHT))
-        HeaderCell("PROCESSO", Modifier.weight(NAME_WEIGHT))
-        HeaderCell("CPU", Modifier.weight(NUMBER_WEIGHT), TextAlign.End)
-        HeaderCell("MEMÓRIA", Modifier.weight(NUMBER_WEIGHT), TextAlign.End)
+        HeaderCell("PID", Modifier.width(PID_WIDTH))
+        HeaderCell("PROCESSO", Modifier.weight(1f))
+        HeaderCell("CPU", Modifier.width(NUMBER_WIDTH), TextAlign.End)
+        HeaderCell("MEMÓRIA", Modifier.width(NUMBER_WIDTH), TextAlign.End)
     }
 }
 
@@ -111,7 +112,7 @@ private fun ProcessRow(process: ProcessMetrics) {
     ) {
         Text(
             text = process.pid.toString(),
-            modifier = Modifier.weight(PID_WEIGHT),
+            modifier = Modifier.width(PID_WIDTH),
             style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -119,7 +120,7 @@ private fun ProcessRow(process: ProcessMetrics) {
 
         Text(
             text = process.name,
-            modifier = Modifier.weight(NAME_WEIGHT),
+            modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
@@ -128,7 +129,7 @@ private fun ProcessRow(process: ProcessMetrics) {
 
         Text(
             text = formatPercent(process.cpuPercent),
-            modifier = Modifier.weight(NUMBER_WEIGHT),
+            modifier = Modifier.width(NUMBER_WIDTH),
             style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
             textAlign = TextAlign.End,
@@ -139,7 +140,7 @@ private fun ProcessRow(process: ProcessMetrics) {
 
         Text(
             text = formatBytes(process.memory),
-            modifier = Modifier.weight(NUMBER_WEIGHT),
+            modifier = Modifier.width(NUMBER_WIDTH),
             style = MaterialTheme.typography.bodySmall,
             fontFamily = FontFamily.Monospace,
             textAlign = TextAlign.End,
@@ -148,6 +149,8 @@ private fun ProcessRow(process: ProcessMetrics) {
     }
 }
 
-private const val PID_WEIGHT = 0.13f
-private const val NAME_WEIGHT = 0.47f
-private const val NUMBER_WEIGHT = 0.20f
+// Colunas de número têm largura fixa e o nome fica com o resto: com pesos
+// proporcionais, uma janela larga afastava o PID do nome por centenas de
+// pixels vazios.
+private val PID_WIDTH = 80.dp
+private val NUMBER_WIDTH = 110.dp

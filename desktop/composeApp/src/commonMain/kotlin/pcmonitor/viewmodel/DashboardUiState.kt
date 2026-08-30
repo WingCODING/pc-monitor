@@ -30,6 +30,7 @@ data class DashboardUiState(
     val metrics: DashboardMetrics? = null,
     val history: MetricsHistory = MetricsHistory(),
     val processes: List<ProcessMetrics> = emptyList(),
+    val processSort: ProcessSort = ProcessSort.Cpu,
     val system: SystemMetrics? = null,
     val message: String? = null,
 )

@@ -53,7 +53,10 @@ fun App(agentUrl: String = DEFAULT_AGENT_URL, modifier: Modifier = Modifier) {
             processes = state.processes,
             system = state.system,
             connection = state.connection,
+            processSort = state.processSort,
+            onProcessSortChange = viewModel::setProcessSort,
             history = state.history,
+            message = state.message,
             modifier = modifier,
         )
     }
