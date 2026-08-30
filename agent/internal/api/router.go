@@ -14,6 +14,7 @@ type Deps struct {
 	System  *service.SystemService
 	Disk    *service.DiskService
 	Network *service.NetworkService
+	Process *service.ProcessService
 	Metrics *service.MetricsService
 }
 
@@ -27,6 +28,7 @@ func NewRouter(deps Deps) http.Handler {
 	mux.HandleFunc("GET /api/v1/system", handleSystem(deps.System))
 	mux.HandleFunc("GET /api/v1/disks", handleDisks(deps.Disk))
 	mux.HandleFunc("GET /api/v1/network", handleNetwork(deps.Network))
+	mux.HandleFunc("GET /api/v1/processes", handleProcesses(deps.Process))
 	mux.HandleFunc("GET /api/v1/metrics", handleMetrics(deps.Metrics))
 
 	return mux

@@ -47,6 +47,7 @@ func run() error {
 	systemService := service.NewSystemService(collector.NewSystemCollector())
 	diskService := service.NewDiskService(collector.NewDiskCollector())
 	networkService := service.NewNetworkService(collector.NewNetworkCollector())
+	processService := service.NewProcessService(collector.NewProcessCollector())
 
 	deps := api.Deps{
 		CPU:     cpuService,
@@ -54,6 +55,7 @@ func run() error {
 		System:  systemService,
 		Disk:    diskService,
 		Network: networkService,
+		Process: processService,
 		Metrics: service.NewMetricsService(cpuService, memoryService, systemService, diskService, networkService),
 	}
 

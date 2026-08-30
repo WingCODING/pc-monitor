@@ -23,11 +23,22 @@ func writeError(w http.ResponseWriter, r *http.Request, err error) {
 		Message: "erro interno do agente",
 	}
 
-	if errors.Is(err, service.ErrUnavailable) {
+	switch {
+	case errors.Is(err, service.ErrUnavailable):
 		status = http.StatusServiceUnavailable
 		body = errorResponse{
 			Error:   "collector_unavailable",
 			Message: "métrica temporariamente indisponível",
+		}
+
+	case errors.Is(err, service.ErrInvalidArgument):
+		status = http.StatusBadRequest
+		body = errorResponse{
+			Error: "invalid_request",
+			// A mensagem descreve o domínio aceito em vez de repetir o valor
+			// recebido: ecoar entrada do cliente na resposta é um vetor de
+			// injeção gratuito, e o log já guarda o valor exato.
+			Message: "parâmetros inválidos: use sort=cpu|memory e limit entre 1 e 500",
 		}
 	}
 
