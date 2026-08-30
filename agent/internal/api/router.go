@@ -9,8 +9,9 @@ import (
 // Deps reúne os services que a camada HTTP consome. Um campo por categoria de
 // métrica, preenchido no bootstrap do servidor.
 type Deps struct {
-	CPU    *service.CPUService
-	Memory *service.MemoryService
+	CPU     *service.CPUService
+	Memory  *service.MemoryService
+	Metrics *service.MetricsService
 }
 
 // NewRouter registra as rotas do agente e devolve o handler HTTP raiz.
@@ -20,6 +21,7 @@ func NewRouter(deps Deps) http.Handler {
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /api/v1/cpu", handleCPU(deps.CPU))
 	mux.HandleFunc("GET /api/v1/memory", handleMemory(deps.Memory))
+	mux.HandleFunc("GET /api/v1/metrics", handleMetrics(deps.Metrics))
 
 	return mux
 }

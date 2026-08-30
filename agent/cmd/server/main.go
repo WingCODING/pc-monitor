@@ -42,9 +42,13 @@ func run() error {
 		return fmt.Errorf("não foi possível escutar em %s: %w", defaultAddr, err)
 	}
 
+	cpuService := service.NewCPUService(collector.NewCPUCollector())
+	memoryService := service.NewMemoryService(collector.NewMemoryCollector())
+
 	deps := api.Deps{
-		CPU:    service.NewCPUService(collector.NewCPUCollector()),
-		Memory: service.NewMemoryService(collector.NewMemoryCollector()),
+		CPU:     cpuService,
+		Memory:  memoryService,
+		Metrics: service.NewMetricsService(cpuService, memoryService),
 	}
 
 	server := &http.Server{
