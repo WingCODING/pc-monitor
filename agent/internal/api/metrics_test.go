@@ -14,10 +14,13 @@ import (
 func routerComMetrics(cpu cpuCollectorFalso, memoria memoryCollectorFalso) http.Handler {
 	sistema := systemCollectorFalso{metricas: model.SystemMetrics{Hostname: "desktop", UptimeSeconds: 53214}}
 
+	disco := diskCollectorFalso{discos: []model.DiskMetrics{{Name: "/dev/dm-0", MountPoint: "/", Total: 1000, Used: 400, UsagePercent: 40}}}
+
 	metrics := service.NewMetricsService(
 		service.NewCPUService(cpu),
 		service.NewMemoryService(memoria),
 		service.NewSystemService(sistema),
+		service.NewDiskService(disco),
 	)
 
 	return NewRouter(Deps{Metrics: metrics})
@@ -44,7 +47,7 @@ func TestHandleMetricsSucesso(t *testing.T) {
 		t.Fatalf("resposta não é JSON válido: %v", err)
 	}
 
-	for _, campo := range []string{"timestamp", "cpu", "memory", "uptimeSeconds"} {
+	for _, campo := range []string{"timestamp", "cpu", "memory", "disk", "uptimeSeconds"} {
 		if _, ok := campos[campo]; !ok {
 			t.Errorf("campo %q ausente na resposta", campo)
 		}
