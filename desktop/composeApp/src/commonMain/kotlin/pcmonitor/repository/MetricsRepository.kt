@@ -20,8 +20,8 @@ class MetricsRepository(
     private val client: AgentClient,
     private val firstRetryDelay: Duration = 1.seconds,
     private val maxRetryDelay: Duration = 10.seconds,
-) {
-    suspend fun getMetrics(): AgentResult<DashboardMetrics> = callAgent { client.metrics() }
+) : MetricsSource {
+    override suspend fun getMetrics(): AgentResult<DashboardMetrics> = callAgent { client.metrics() }
 
     /**
      * Informações da máquina, lidas uma vez por sessão.
@@ -29,7 +29,7 @@ class MetricsRepository(
      * Hostname, sistema e arquitetura não mudam enquanto o agente roda, então
      * não fazem parte do snapshot que trafega a cada segundo.
      */
-    suspend fun getSystem(): AgentResult<SystemMetrics> = callAgent { client.system() }
+    override suspend fun getSystem(): AgentResult<SystemMetrics> = callAgent { client.system() }
 
     /**
      * Fluxo contínuo de snapshots, com reconexão.
@@ -43,7 +43,7 @@ class MetricsRepository(
      * ar só gastaria CPU dos dois lados, e esperar sempre 10 s faria o
      * dashboard demorar a voltar depois de um reinício rápido do agente.
      */
-    fun observeMetrics(): Flow<AgentResult<DashboardMetrics>> = flow {
+    override fun observeMetrics(): Flow<AgentResult<DashboardMetrics>> = flow {
         var retryDelay = firstRetryDelay
 
         while (true) {

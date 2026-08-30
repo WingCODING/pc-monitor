@@ -11,10 +11,10 @@ import pcmonitor.viewmodel.ProcessSort
  * snapshot é barato e chega a cada segundo, enquanto a varredura de processos
  * custa uma volta inteira em /proc no agente.
  */
-class ProcessesRepository(private val client: AgentClient) {
-    suspend fun getProcesses(
-        sort: ProcessSort = ProcessSort.Cpu,
-        limit: Int = DEFAULT_LIMIT,
+class ProcessesRepository(private val client: AgentClient) : ProcessesSource {
+    override suspend fun getProcesses(
+        sort: ProcessSort,
+        limit: Int,
     ): AgentResult<List<ProcessMetrics>> = callAgent { client.processes(sort = sort.apiValue, limit = limit) }
 
     companion object {

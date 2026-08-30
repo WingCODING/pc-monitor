@@ -1,6 +1,8 @@
 package pcmonitor.repository
 
+import io.ktor.client.call.NoTransformationFoundException
 import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.serialization.ContentConvertException
 import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
@@ -64,7 +66,10 @@ internal fun failureFor(failure: Throwable): AgentResult.Failure = when (failure
 
     is AgentHttpException -> httpFailure(failure)
 
-    is SerializationException ->
+    // ContentConvertException é o que o Ktor lança quando a desserialização
+    // falha: a SerializationException original fica encapsulada nela, e sem
+    // este ramo um JSON truncado apareceria como "falha inesperada".
+    is ContentConvertException, is NoTransformationFoundException, is SerializationException ->
         AgentResult.Failure(FailureReason.Malformed, "O agente respondeu num formato inesperado.")
 
     else ->

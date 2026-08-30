@@ -1,5 +1,6 @@
 package pcmonitor.viewmodel
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -15,8 +16,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import pcmonitor.repository.AgentResult
 import pcmonitor.repository.FailureReason
-import pcmonitor.repository.MetricsRepository
-import pcmonitor.repository.ProcessesRepository
+import pcmonitor.repository.MetricsSource
+import pcmonitor.repository.ProcessesSource
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -28,9 +29,12 @@ import kotlin.time.Duration.Companion.seconds
  * `TestScope`. Nenhuma linha aqui conhece HTTP.
  */
 class MetricsViewModel(
-    private val metricsRepository: MetricsRepository,
-    private val processesRepository: ProcessesRepository,
+    private val metricsRepository: MetricsSource,
+    private val processesRepository: ProcessesSource,
     private val scope: CoroutineScope,
+    // Injetável para que os testes rodem em tempo virtual: com
+    // Dispatchers.Default fixo, os laços escapariam do relógio do teste.
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default,
     // A varredura de processos custa uma volta inteira em /proc no agente;
     // pedir na mesma cadência das métricas gastaria CPU para mostrar uma
     // tabela que ninguém consegue ler mudando a cada segundo.
@@ -55,12 +59,12 @@ class MetricsViewModel(
             return
         }
 
-        // Dispatchers.Default: o escopo vem da composição, que roda na thread
-        // da interface. Desserializar um snapshot por segundo e uma lista de
-        // 50 processos a cada dois lá disputaria o tempo do desenho.
-        jobs += scope.launch(Dispatchers.Default) { observeMetrics() }
-        jobs += scope.launch(Dispatchers.Default) { pollProcesses() }
-        jobs += scope.launch(Dispatchers.Default) { loadSystem() }
+        // Fora da thread da interface: o escopo vem da composição, e
+        // desserializar um snapshot por segundo mais uma lista de 50 processos
+        // a cada dois disputaria o tempo do desenho.
+        jobs += scope.launch(dispatcher) { observeMetrics() }
+        jobs += scope.launch(dispatcher) { pollProcesses() }
+        jobs += scope.launch(dispatcher) { loadSystem() }
     }
 
     /** Troca o critério de ordenação e refaz o pedido sem esperar o intervalo. */
