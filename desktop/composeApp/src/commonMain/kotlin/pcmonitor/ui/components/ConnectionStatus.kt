@@ -15,27 +15,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import pcmonitor.ui.theme.StatusColors
+import pcmonitor.viewmodel.ConnectionState
 
 /**
- * Estado da ligação com o agente, do ponto de vista da interface.
+ * Etiqueta com bolinha colorida indicando a ligação com o agente.
  *
- * São três e não dois porque a UI reage de forma diferente a cada um: durante
- * a conexão inicial não há o que mostrar, enquanto uma queda depois de
- * conectado mantém os últimos valores na tela em vez de esvaziá-la.
+ * O enum vive no `viewmodel` e não aqui: o estado da ligação é estado da
+ * aplicação, e deixá-lo na camada de componentes obrigaria o ViewModel a
+ * depender da UI para descrever a si mesmo.
  */
-enum class ConnectionState {
-    Connecting,
-    Connected,
-    Disconnected,
-}
-
-/** Etiqueta com bolinha colorida indicando a ligação com o agente. */
 @Composable
 fun ConnectionStatus(state: ConnectionState, modifier: Modifier = Modifier) {
     val (color, label) = when (state) {
-        ConnectionState.Connecting -> StatusColors.warning to "Conectando"
+        ConnectionState.Loading -> StatusColors.idle to "Conectando"
         ConnectionState.Connected -> StatusColors.ok to "Conectado"
         ConnectionState.Disconnected -> StatusColors.critical to "Desconectado"
+        ConnectionState.Error -> StatusColors.warning to "Erro no agente"
     }
 
     Row(

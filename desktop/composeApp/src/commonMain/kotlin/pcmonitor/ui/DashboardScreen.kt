@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import pcmonitor.model.DashboardMetrics
 import pcmonitor.model.ProcessMetrics
 import pcmonitor.model.SystemMetrics
-import pcmonitor.ui.components.ConnectionState
 import pcmonitor.ui.components.ConnectionStatus
 import pcmonitor.ui.components.MetricCard
 import pcmonitor.ui.components.NetworkCard
@@ -28,6 +27,7 @@ import pcmonitor.ui.components.ProcessTable
 import pcmonitor.ui.format.formatBytes
 import pcmonitor.ui.format.formatPercent
 import pcmonitor.ui.format.formatUptime
+import pcmonitor.viewmodel.ConnectionState
 import kotlin.math.max
 
 /**
