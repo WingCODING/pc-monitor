@@ -44,11 +44,13 @@ func run() error {
 
 	cpuService := service.NewCPUService(collector.NewCPUCollector())
 	memoryService := service.NewMemoryService(collector.NewMemoryCollector())
+	systemService := service.NewSystemService(collector.NewSystemCollector())
 
 	deps := api.Deps{
 		CPU:     cpuService,
 		Memory:  memoryService,
-		Metrics: service.NewMetricsService(cpuService, memoryService),
+		System:  systemService,
+		Metrics: service.NewMetricsService(cpuService, memoryService, systemService),
 	}
 
 	server := &http.Server{

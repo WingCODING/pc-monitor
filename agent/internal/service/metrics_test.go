@@ -9,8 +9,14 @@ import (
 	"pc-monitor-agent/internal/model"
 )
 
-func metricsServiceComDubles(cpu cpuCollectorFalso, memoria memoryCollectorFalso) *MetricsService {
-	return NewMetricsService(NewCPUService(cpu), NewMemoryService(memoria))
+func metricsServiceComDubles(cpu cpuCollectorFalso, memoria memoryCollectorFalso, sistema systemCollectorFalso) *MetricsService {
+	return NewMetricsService(NewCPUService(cpu), NewMemoryService(memoria), NewSystemService(sistema))
+}
+
+// sistemaOK devolve um dublê de sistema saudável, para os testes que não estão
+// exercitando o caminho de uptime.
+func sistemaOK() systemCollectorFalso {
+	return systemCollectorFalso{metricas: model.SystemMetrics{Hostname: "desktop", UptimeSeconds: 53214}}
 }
 
 func TestMetricsServiceSnapshotCompleto(t *testing.T) {
@@ -22,6 +28,7 @@ func TestMetricsServiceSnapshotCompleto(t *testing.T) {
 	snapshot := metricsServiceComDubles(
 		cpuCollectorFalso{metricas: cpuEsperado},
 		memoryCollectorFalso{metricas: memoriaEsperada},
+		sistemaOK(),
 	).Snapshot(context.Background())
 
 	depois := time.Now().UTC()
@@ -55,6 +62,7 @@ func TestMetricsServiceSnapshotParcial(t *testing.T) {
 	snapshot := metricsServiceComDubles(
 		cpuCollectorFalso{err: errors.New("/proc/stat ilegível")},
 		memoryCollectorFalso{metricas: memoriaEsperada},
+		sistemaOK(),
 	).Snapshot(context.Background())
 
 	if snapshot.CPU != nil {
@@ -82,9 +90,10 @@ func TestMetricsServiceTodasAsMetricasFalham(t *testing.T) {
 	snapshot := metricsServiceComDubles(
 		cpuCollectorFalso{err: falha},
 		memoryCollectorFalso{err: falha},
+		systemCollectorFalso{err: falha},
 	).Snapshot(context.Background())
 
-	if snapshot.CPU != nil || snapshot.Memory != nil {
+	if snapshot.CPU != nil || snapshot.Memory != nil || snapshot.UptimeSeconds != nil {
 		t.Error("nenhuma métrica deveria estar presente")
 	}
 

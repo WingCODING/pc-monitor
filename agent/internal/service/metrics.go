@@ -12,12 +12,13 @@ import (
 type MetricsService struct {
 	cpu    *CPUService
 	memory *MemoryService
+	system *SystemService
 }
 
 // NewMetricsService compõe os services já existentes em vez de falar
 // diretamente com os collectors, reaproveitando a classificação de erros.
-func NewMetricsService(cpu *CPUService, memory *MemoryService) *MetricsService {
-	return &MetricsService{cpu: cpu, memory: memory}
+func NewMetricsService(cpu *CPUService, memory *MemoryService, system *SystemService) *MetricsService {
+	return &MetricsService{cpu: cpu, memory: memory, system: system}
 }
 
 // Snapshot devolve o estado atual da máquina.
@@ -48,6 +49,15 @@ func (s *MetricsService) Snapshot(ctx context.Context) model.DashboardMetrics {
 			slog.Warn("memória indisponível no snapshot", "error", err)
 		} else {
 			snapshot.Memory = &metrics
+		}
+	}
+
+	if s.system != nil {
+		if metrics, err := s.system.Current(ctx); err != nil {
+			slog.Warn("sistema indisponível no snapshot", "error", err)
+		} else {
+			uptime := metrics.UptimeSeconds
+			snapshot.UptimeSeconds = &uptime
 		}
 	}
 

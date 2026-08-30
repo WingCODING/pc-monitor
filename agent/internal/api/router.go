@@ -11,6 +11,7 @@ import (
 type Deps struct {
 	CPU     *service.CPUService
 	Memory  *service.MemoryService
+	System  *service.SystemService
 	Metrics *service.MetricsService
 }
 
@@ -21,6 +22,7 @@ func NewRouter(deps Deps) http.Handler {
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /api/v1/cpu", handleCPU(deps.CPU))
 	mux.HandleFunc("GET /api/v1/memory", handleMemory(deps.Memory))
+	mux.HandleFunc("GET /api/v1/system", handleSystem(deps.System))
 	mux.HandleFunc("GET /api/v1/metrics", handleMetrics(deps.Metrics))
 
 	return mux
