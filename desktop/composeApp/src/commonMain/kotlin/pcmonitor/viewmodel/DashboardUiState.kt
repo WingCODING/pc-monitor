@@ -28,6 +28,7 @@ enum class ConnectionState {
 data class DashboardUiState(
     val connection: ConnectionState = ConnectionState.Loading,
     val metrics: DashboardMetrics? = null,
+    val history: MetricsHistory = MetricsHistory(),
     val processes: List<ProcessMetrics> = emptyList(),
     val system: SystemMetrics? = null,
     val message: String? = null,

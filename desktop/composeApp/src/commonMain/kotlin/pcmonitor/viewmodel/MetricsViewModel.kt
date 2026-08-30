@@ -1,6 +1,7 @@
 package pcmonitor.viewmodel
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -45,9 +46,12 @@ class MetricsViewModel(
             return
         }
 
-        jobs += scope.launch { observeMetrics() }
-        jobs += scope.launch { pollProcesses() }
-        jobs += scope.launch { loadSystem() }
+        // Dispatchers.Default: o escopo vem da composição, que roda na thread
+        // da interface. Desserializar um snapshot por segundo e uma lista de
+        // 50 processos a cada dois lá disputaria o tempo do desenho.
+        jobs += scope.launch(Dispatchers.Default) { observeMetrics() }
+        jobs += scope.launch(Dispatchers.Default) { pollProcesses() }
+        jobs += scope.launch(Dispatchers.Default) { loadSystem() }
     }
 
     fun stop() {
@@ -69,6 +73,7 @@ class MetricsViewModel(
                     it.copy(
                         connection = ConnectionState.Connected,
                         metrics = result.value,
+                        history = it.history.plus(result.value),
                         message = null,
                     )
                 }

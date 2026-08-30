@@ -53,6 +53,7 @@ fun App(agentUrl: String = DEFAULT_AGENT_URL, modifier: Modifier = Modifier) {
             processes = state.processes,
             system = state.system,
             connection = state.connection,
+            history = state.history,
             modifier = modifier,
         )
     }
