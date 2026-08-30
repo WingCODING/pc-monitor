@@ -43,7 +43,8 @@ func run() error {
 	}
 
 	deps := api.Deps{
-		CPU: service.NewCPUService(collector.NewCPUCollector()),
+		CPU:    service.NewCPUService(collector.NewCPUCollector()),
+		Memory: service.NewMemoryService(collector.NewMemoryCollector()),
 	}
 
 	server := &http.Server{
