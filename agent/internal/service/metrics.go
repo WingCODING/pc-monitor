@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"pc-monitor-agent/internal/model"
@@ -15,12 +14,23 @@ type MetricsService struct {
 	system  *SystemService
 	disk    *DiskService
 	network *NetworkService
+
+	// warn evita que um collector quebrado escreva uma linha por segundo no
+	// log enquanto o loop do WebSocket estiver publicando.
+	warn *warnThrottle
 }
 
 // NewMetricsService compõe os services já existentes em vez de falar
 // diretamente com os collectors, reaproveitando a classificação de erros.
 func NewMetricsService(cpu *CPUService, memory *MemoryService, system *SystemService, disk *DiskService, network *NetworkService) *MetricsService {
-	return &MetricsService{cpu: cpu, memory: memory, system: system, disk: disk, network: network}
+	return &MetricsService{
+		cpu:     cpu,
+		memory:  memory,
+		system:  system,
+		disk:    disk,
+		network: network,
+		warn:    newWarnThrottle(warnThrottleInterval),
+	}
 }
 
 // Snapshot devolve o estado atual da máquina.
@@ -40,7 +50,7 @@ func (s *MetricsService) Snapshot(ctx context.Context) model.DashboardMetrics {
 
 	if s.cpu != nil {
 		if metrics, err := s.cpu.Current(ctx); err != nil {
-			slog.Warn("cpu indisponível no snapshot", "error", err)
+			s.warn.warn("cpu", "cpu indisponível no snapshot", "error", err)
 		} else {
 			snapshot.CPU = &metrics
 		}
@@ -48,7 +58,7 @@ func (s *MetricsService) Snapshot(ctx context.Context) model.DashboardMetrics {
 
 	if s.memory != nil {
 		if metrics, err := s.memory.Current(ctx); err != nil {
-			slog.Warn("memória indisponível no snapshot", "error", err)
+			s.warn.warn("memory", "memória indisponível no snapshot", "error", err)
 		} else {
 			snapshot.Memory = &metrics
 		}
@@ -56,7 +66,7 @@ func (s *MetricsService) Snapshot(ctx context.Context) model.DashboardMetrics {
 
 	if s.disk != nil {
 		if summary, err := s.disk.Summary(ctx); err != nil {
-			slog.Warn("disco indisponível no snapshot", "error", err)
+			s.warn.warn("disk", "disco indisponível no snapshot", "error", err)
 		} else {
 			snapshot.Disk = &summary
 		}
@@ -64,7 +74,7 @@ func (s *MetricsService) Snapshot(ctx context.Context) model.DashboardMetrics {
 
 	if s.network != nil {
 		if summary, err := s.network.Summary(ctx); err != nil {
-			slog.Warn("rede indisponível no snapshot", "error", err)
+			s.warn.warn("network", "rede indisponível no snapshot", "error", err)
 		} else {
 			snapshot.Network = &summary
 		}
@@ -72,7 +82,7 @@ func (s *MetricsService) Snapshot(ctx context.Context) model.DashboardMetrics {
 
 	if s.system != nil {
 		if metrics, err := s.system.Current(ctx); err != nil {
-			slog.Warn("sistema indisponível no snapshot", "error", err)
+			s.warn.warn("system", "sistema indisponível no snapshot", "error", err)
 		} else {
 			uptime := metrics.UptimeSeconds
 			snapshot.UptimeSeconds = &uptime

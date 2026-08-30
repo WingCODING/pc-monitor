@@ -31,5 +31,5 @@ func NewRouter(deps Deps) http.Handler {
 	mux.HandleFunc("GET /api/v1/processes", handleProcesses(deps.Process))
 	mux.HandleFunc("GET /api/v1/metrics", handleMetrics(deps.Metrics))
 
-	return mux
+	return withMiddleware(mux)
 }

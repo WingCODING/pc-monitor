@@ -15,14 +15,11 @@ import (
 
 	"pc-monitor-agent/internal/api"
 	"pc-monitor-agent/internal/collector"
+	"pc-monitor-agent/internal/config"
 	"pc-monitor-agent/internal/service"
 )
 
 const (
-	// defaultAddr mantém o agente restrito ao loopback: no MVP não há
-	// autenticação, então a API não deve ficar exposta na rede.
-	defaultAddr = "127.0.0.1:8080"
-
 	readHeaderTimeout = 5 * time.Second
 	shutdownTimeout   = 10 * time.Second
 )
@@ -35,11 +32,18 @@ func main() {
 }
 
 func run() error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("configuração inválida: %w", err)
+	}
+
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: cfg.LogLevel})))
+
 	// O listener é aberto antes do Serve para que falhas de bind (porta em uso,
 	// permissão negada) sejam reportadas de imediato, e não em uma goroutine.
-	listener, err := net.Listen("tcp", defaultAddr)
+	listener, err := net.Listen("tcp", cfg.Addr())
 	if err != nil {
-		return fmt.Errorf("não foi possível escutar em %s: %w", defaultAddr, err)
+		return fmt.Errorf("não foi possível escutar em %s: %w", cfg.Addr(), err)
 	}
 
 	cpuService := service.NewCPUService(collector.NewCPUCollector())
@@ -74,7 +78,11 @@ func run() error {
 		}
 	}()
 
-	slog.Info("servidor iniciado", "addr", listener.Addr().String())
+	slog.Info("servidor iniciado",
+		"addr", listener.Addr().String(),
+		"collectionInterval", cfg.CollectionInterval,
+		"logLevel", cfg.LogLevel,
+	)
 
 	select {
 	case err := <-serveErr:
