@@ -1,0 +1,24 @@
+# IntelliJ / JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Gradle
+.gradle/
+desktop/build/
+desktop/*/build/
+!gradle/wrapper/gradle-wrapper.jar
+desktop/local.properties
+.kotlin/
+
+# Go
+agent/bin/
+agent/*.exe
+agent/*.test
+agent/*.out
+
+# OS
+.DS_Store
+Thumbs.db
