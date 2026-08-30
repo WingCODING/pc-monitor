@@ -52,6 +52,15 @@ func run() error {
 	diskService := service.NewDiskService(collector.NewDiskCollector())
 	networkService := service.NewNetworkService(collector.NewNetworkCollector())
 	processService := service.NewProcessService(collector.NewProcessCollector())
+	metricsService := service.NewMetricsService(cpuService, memoryService, systemService, diskService, networkService)
+
+	// O contexto de sinal nasce antes do hub: é ele que encerra o loop de
+	// publicação e, por tabela, as conexões WebSocket abertas.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	hub := service.NewMetricsHub(metricsService, cfg.CollectionInterval)
+	go hub.Run(ctx)
 
 	deps := api.Deps{
 		CPU:     cpuService,
@@ -60,16 +69,14 @@ func run() error {
 		Disk:    diskService,
 		Network: networkService,
 		Process: processService,
-		Metrics: service.NewMetricsService(cpuService, memoryService, systemService, diskService, networkService),
+		Metrics: metricsService,
+		Hub:     hub,
 	}
 
 	server := &http.Server{
 		Handler:           api.NewRouter(deps),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	serveErr := make(chan error, 1)
 	go func() {

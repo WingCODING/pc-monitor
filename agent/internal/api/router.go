@@ -16,6 +16,7 @@ type Deps struct {
 	Network *service.NetworkService
 	Process *service.ProcessService
 	Metrics *service.MetricsService
+	Hub     *service.MetricsHub
 }
 
 // NewRouter registra as rotas do agente e devolve o handler HTTP raiz.
@@ -30,6 +31,7 @@ func NewRouter(deps Deps) http.Handler {
 	mux.HandleFunc("GET /api/v1/network", handleNetwork(deps.Network))
 	mux.HandleFunc("GET /api/v1/processes", handleProcesses(deps.Process))
 	mux.HandleFunc("GET /api/v1/metrics", handleMetrics(deps.Metrics))
+	mux.HandleFunc("GET /api/v1/ws/metrics", handleMetricsSocket(deps.Hub))
 
 	return withMiddleware(mux)
 }

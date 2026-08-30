@@ -45,14 +45,30 @@ internal suspend fun <T> callAgent(block: suspend () -> T): AgentResult<T> = try
     AgentResult.Success(block())
 } catch (cancellation: CancellationException) {
     throw cancellation
-} catch (timeout: HttpRequestTimeoutException) {
-    AgentResult.Failure(FailureReason.Unreachable, "O agente não respondeu a tempo.")
-} catch (io: IOException) {
-    AgentResult.Failure(FailureReason.Unreachable, "Não foi possível falar com o agente.")
-} catch (http: AgentHttpException) {
-    httpFailure(http)
-} catch (serialization: SerializationException) {
-    AgentResult.Failure(FailureReason.Malformed, "O agente respondeu num formato inesperado.")
+} catch (failure: Throwable) {
+    failureFor(failure)
+}
+
+/**
+ * Classifica uma falha de comunicação com o agente.
+ *
+ * Usada tanto pelas chamadas REST quanto pelo fluxo do WebSocket, para que a
+ * mesma queda de conexão produza o mesmo estado de UI nos dois caminhos.
+ */
+internal fun failureFor(failure: Throwable): AgentResult.Failure = when (failure) {
+    is HttpRequestTimeoutException ->
+        AgentResult.Failure(FailureReason.Unreachable, "O agente não respondeu a tempo.")
+
+    is IOException ->
+        AgentResult.Failure(FailureReason.Unreachable, "Não foi possível falar com o agente.")
+
+    is AgentHttpException -> httpFailure(failure)
+
+    is SerializationException ->
+        AgentResult.Failure(FailureReason.Malformed, "O agente respondeu num formato inesperado.")
+
+    else ->
+        AgentResult.Failure(FailureReason.Unexpected, failure.message ?: "Falha inesperada ao falar com o agente.")
 }
 
 private fun httpFailure(http: AgentHttpException): AgentResult.Failure {

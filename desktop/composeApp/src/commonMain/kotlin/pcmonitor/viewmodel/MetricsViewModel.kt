@@ -28,7 +28,6 @@ class MetricsViewModel(
     private val metricsRepository: MetricsRepository,
     private val processesRepository: ProcessesRepository,
     private val scope: CoroutineScope,
-    private val metricsInterval: Duration = 1.seconds,
     // A varredura de processos custa uma volta inteira em /proc no agente;
     // pedir na mesma cadência das métricas gastaria CPU para mostrar uma
     // tabela que ninguém consegue ler mudando a cada segundo.
@@ -46,7 +45,7 @@ class MetricsViewModel(
             return
         }
 
-        jobs += scope.launch { pollMetrics() }
+        jobs += scope.launch { observeMetrics() }
         jobs += scope.launch { pollProcesses() }
         jobs += scope.launch { loadSystem() }
     }
@@ -56,9 +55,16 @@ class MetricsViewModel(
         jobs.clear()
     }
 
-    private suspend fun pollMetrics() {
-        while (currentCoroutineContext().isActive) {
-            when (val result = metricsRepository.getMetrics()) {
+    /**
+     * Acompanha o fluxo de snapshots do WebSocket.
+     *
+     * O fluxo do repository já reconecta sozinho e nunca termina, então não há
+     * laço aqui — e é justamente por existir um único coletor que uma
+     * reconexão não deixa duas sessões vivas.
+     */
+    private suspend fun observeMetrics() {
+        metricsRepository.observeMetrics().collect { result ->
+            when (result) {
                 is AgentResult.Success -> mutableState.update {
                     it.copy(
                         connection = ConnectionState.Connected,
@@ -70,12 +76,13 @@ class MetricsViewModel(
                 is AgentResult.Failure -> mutableState.update {
                     it.copy(
                         connection = result.reason.toConnectionState(),
-                        message = result.message,
+                        // A repetição é automática; dizer isso evita que o
+                        // usuário fique procurando um botão de reconectar que
+                        // não existe.
+                        message = "${result.message} Tentando novamente…",
                     )
                 }
             }
-
-            delay(metricsInterval)
         }
     }
 

@@ -5,11 +5,16 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.json.Json
 import pcmonitor.model.DashboardMetrics
 import pcmonitor.model.ProcessMetrics
@@ -38,6 +43,27 @@ class AgentClient(
             parameter("sort", sort)
             parameter("limit", limit)
         }.decode()
+
+    /**
+     * Fluxo de snapshots vindos do WebSocket.
+     *
+     * O fluxo termina quando o agente fecha a conexão e lança quando ela cai —
+     * quem decide reconectar é o repository, que é onde a política de repetição
+     * pertence.
+     *
+     * `channelFlow` e não `flow`: as mensagens chegam na corrotina da sessão
+     * WebSocket, e emitir de outra corrotina quebra a regra de contexto de um
+     * `flow` comum.
+     */
+    fun snapshots(): Flow<DashboardMetrics> = channelFlow {
+        httpClient.webSocket(urlString = metricsSocketUrl()) {
+            for (frame in incoming) {
+                if (frame is Frame.Text) {
+                    send(agentJson.decodeFromString(DashboardMetrics.serializer(), frame.readText()))
+                }
+            }
+        }
+    }
 
     /** Endereço do WebSocket de métricas, derivado da mesma base. */
     fun metricsSocketUrl(): String = baseUrl.replaceFirst("http", "ws") + "/api/v1/ws/metrics"

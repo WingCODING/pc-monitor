@@ -19,6 +19,7 @@ import (
 // cpu.Percent: o loop de publicação do WebSocket e as requisições REST
 // convivem, e com o estado compartilhado do gopsutil uma chamada consumiria o
 // baseline da outra, produzindo leituras erráticas.
+
 type cpuCollector struct {
 	mu        sync.Mutex
 	lastTimes *cpu.TimesStat
